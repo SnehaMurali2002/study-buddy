@@ -1,4 +1,5 @@
 # Study Buddy 📚
+**Live demo:** https://study-buddy-pro.streamlit.app/
 
 Study Buddy is a simple Generative AI web app that helps students understand and revise their study notes. Paste your notes, and the AI gives you a short summary or answers your questions about them.
 
