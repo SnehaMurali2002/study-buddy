@@ -1,4 +1,5 @@
 import os
+import time
 import streamlit as st
 from dotenv import load_dotenv
 from google import genai
@@ -9,19 +10,29 @@ client = genai.Client(
     api_key=os.getenv("GOOGLE_API_KEY"),
     http_options=types.HttpOptions(api_version="v1beta"),
 )
+
 MODELS = [
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-flash",
     "gemini-3.1-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemma-4-26b-a4b-it",
 ]
 
 
 def ask_ai(prompt):
-    response = client.models.generate_content(
-        model="gemini-flash-latest",
-        contents=prompt,
-    )
-    return response.text
+    last_error = None
+    for attempt in range(2):
+        for model_name in MODELS:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                )
+                return response.text
+            except Exception as error:
+                last_error = error
+        time.sleep(3)
+    raise last_error
 
 
 def safe_ask(prompt):
@@ -34,9 +45,7 @@ def safe_ask(prompt):
 st.title("Study Buddy")
 st.write("Paste your notes, then get a summary or ask a question about them.")
 
-
 notes = st.text_area("Paste your notes here", height=250)
-
 
 if st.button("Summarize"):
     if not notes.strip():
@@ -45,18 +54,15 @@ if st.button("Summarize"):
         with st.spinner("Reading your notes..."):
             prompt = (
                 "Summarize the notes below in 5 short bullet points. "
-                "Use very simple English.\n\n"
+                "Use very simple English. Give only the bullet points, nothing else.\n\n"
                 f"Notes:\n{notes}"
             )
             st.subheader("Summary")
             st.write(safe_ask(prompt))
 
-
 st.divider()
 
-
 question = st.text_input("Ask a question about your notes")
-
 
 if st.button("Get answer"):
     if not notes.strip() or not question.strip():
